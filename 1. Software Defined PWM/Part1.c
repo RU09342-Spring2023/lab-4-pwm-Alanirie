@@ -13,8 +13,7 @@
 
 #include <msp430.h>
 
-unsigned short DutyCycle = 12000;
-
+unsigned short DutyCycle = 50000;
 
 int main(void)
 {
@@ -26,24 +25,24 @@ int main(void)
     // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
 
-    while(1)
+    /*while(1)
     {
         if (!(P2IN & BIT3))            // If S2 (P2.3) is pressed, switch to NAND so that it changes on 1
             P6OUT ^= BIT6;          // Toggle P6.6
         if (!(P4IN & BIT1))            // If S1 (P4.1) is pressed
             P1OUT ^= BIT0;          // Toggle P1.0
         __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
-    }
+    } */
 
     // Configure Timer_B
-    TB0CTL = TBSSEL_2 | MC_1 | TBCLR | TBIE;      // SMCLK, up mode, clear TBR, enable interrupt
+    TB3CCR0 = 1000-1;                         // PWM Period
+    TB3CCTL1 = OUTMOD_7;                      // CCR1 reset/set
+    TB3CCR1 = DutyCycle;                            // CCR1 PWM duty cycle
+    TB3CCR2 = DutyCycle;                            // CCR2 PWM duty cycle
+    TB3CTL = TBSSEL__SMCLK | MC__UP | TBCLR;  // SMCLK, up mode, clear TBR
 
-    TB0CCTL1 |= CCIE;                             // Enable TB0 CCR1 Interrupt
-
-    TB0CCR0 = DutyCycle;                          // Set CCR1 to the value to set the duty cycle
-
-    __bis_SR_register(LPM3_bits | GIE);           // Enter LPM3, enable interrupts
-    __no_operation();                             // For debugger
+    __bis_SR_register(LPM0_bits);             // Enter LPM0
+    __no_operation();                         // For debugger
 }
 
 // Timer0_B3 Interrupt Vector (TBIV) handler
@@ -61,10 +60,11 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) TIMER0_B1_ISR (void)
         case TB0IV_NONE:
             break;                               // No interrupt
         case TB0IV_TBCCR1:
-            P1OUT &= ~BIT0;
-            break;                               // CCR1 Set the pin to a 0
+            P1OUT ^= BIT0;
+            break;                               // CCR1 Set the RED to toggle
         case TB0IV_TBCCR2:
-            break;                               // CCR2 not used
+            P6OUT ^= BIT6;
+            break;                               // CCR1 Set the Green to toggle
         case TB0IV_TBIFG:
             P1OUT |= BIT0;                       // overflow Set the pin to a 1
             break;

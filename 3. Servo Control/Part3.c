@@ -1,7 +1,7 @@
 /*
- * HardwarePWMExample.c
+ * Part3.c
  *
- *  Created on: Feb 18, 2023
+ *  Created on: Feb 21, 2023
  *      Author: Russell Trafford
  *
  *      This example configures P6.0 as a PWM output as controlled by TimerB3.
