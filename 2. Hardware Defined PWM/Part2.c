@@ -13,29 +13,36 @@
 
 #include <msp430.h>
 
+// Global variable to control the duty cycle and hence the brightness
+unsigned int dutyCycle = 500;
 
-
-int main(void)
+void main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;                    // Stop WDT
+    // Stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;
 
-    gpioInit();                 // Initialize all GPIO Pins for the project
+    // Set Pin 1.0 as output
+    P1DIR |= BIT0;
 
-    // Disable the GPIO power-on default high-impedance mode to activate
-    // previously configured port settings
-    PM5CTL0 &= ~LOCKLPM5;
+    // Configure Timer A0 for PWM
+    TA0CCR0 = 1000 - 1;         // PWM Period
+    TA0CCTL1 = OUTMOD_7;        // Reset/Set output mode
+    TA0CCR1 = dutyCycle;        // Initial duty cycle
+    TA0CTL = TASSEL_2 + MC_1;   // SMCLK, Up mode
 
+    while (1)
+    {
+        // Delay for the brightness change to be visible
+        __delay_cycles(10000);
 
+        // Increase duty cycle by 100
+        dutyCycle += 100;
+
+        // Check for maximum duty cycle value
+        if (dutyCycle > 1000)
+            dutyCycle = 0;
+
+        // Update the duty cycle
+        TA0CCR1 = dutyCycle;
+    }
 }
-
-
-void gpioInit()
-{
-   // Setting Directions of Pins
-
-       P6DIR |= BIT0;              // Configure P6.0 to an Output
-       P6DIR |= BIT1;              // Configure P6.1 to an Output
-       P6DIR |= BIT2;              // Configure P6.2 to an Output
-}
-
-
